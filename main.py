@@ -92,7 +92,6 @@ class FlipwiseApp(ctk.CTk):
             padx=10, pady=(10,5),
             stick="ew"
         )
-
         # Makes all 3 columns equal in size inside the frame
         self.frame_stats.grid_columnconfigure((0,1,2), weight=1)
 
@@ -102,7 +101,7 @@ class FlipwiseApp(ctk.CTk):
             text="Total: 0",
             font=ctk.CTkFont(size=13)
         )
-        self.lbl_title.grid(row=0, column=0, pady=8)
+        self.lbl_total.grid(row=0, column=0, pady=8)
 
         # -- Correct count label --
         self.lbl_correct = ctk.CTkLabel(
@@ -111,7 +110,7 @@ class FlipwiseApp(ctk.CTk):
             font=ctk.CTkFont(size=13),
             text_color="#1D9E75"     # Green Color
         )
-        self.lbl_correct.grid(row=0, column=1,pady=8, sticky="ew")
+        self.lbl_correct.grid(row=0, column=1,pady=8)
 
         # Incorrect count label
         self.lbl_incorrect = ctk.CTkLabel(
@@ -120,7 +119,7 @@ class FlipwiseApp(ctk.CTk):
             font=ctk.CTkFont(size=13),
             text_color="#D85A30"       # Red Color
         )
-        self.lbl_incorrect.grid(row=0, column=2, pady=8, sticky="ew")
+        self.lbl_incorrect.grid(row=0, column=2, pady=8)
 
         # -- Card Frame--
         self.frame_card = ctk.CTkFrame(self.tab_quiz)
@@ -206,7 +205,117 @@ class FlipwiseApp(ctk.CTk):
         self.btn_incorrect.grid(row=0, column=1, padx=(0,5), sticky="ew")
 
     def _build_add_tab(self):
-        pass
+        # ---Question Label ---
+        self.lbl_q_prompt = ctk.CTkLabel(
+            self.tab_add,
+            text="Question",
+            font=ctk.CTkFont(size=13, weight="bold")
+        )
+        self.lbl_q_prompt.grid(
+            row=0, column=0,
+            padx=20, pady=(20,5),
+            sticky="w"
+        )
+
+        # Question Entry Box
+        self.entry_question = ctk.CTkEntry(
+            self.tab_add,
+            placeholder_text="Enter your question:... ",
+            height=40
+        )
+        self.entry_question.grid(
+            row=1, column=0,
+            padx=20, pady=(0,10),
+            sticky="ew"
+        )
+
+        # --- Answer Label ---
+        self.lbl_a_prompt = ctk.CTkLabel(
+            self.tab_add,
+            text="Answer",
+            font=ctk.CTkFont(size=13, weight="bold")
+        )
+        self.lbl_a_prompt.grid(
+            row=2, column=0, 
+            padx=20, pady=(10,5),
+            sticky="w"
+        )
+        
+        # Answer Entry Box
+        self.textbox_answer = ctk.CTkTextbox(
+            self.tab_add,
+            height=120
+        )
+        self.textbox_answer.grid(
+            row=3, column=0,
+            padx=20, pady=(0,10),
+            sticky="ew"
+        )
+
+        # Add Card Button
+        self.btn_add_card = ctk.CTkButton(
+            self.tab_add,
+            text="Add Flashcard",
+            command=self._add_card
+        )
+        self.btn_add_card.grid(
+            row=4, column=0,
+            padx=20, pady=(5,10),
+            sticky="ew"
+        )
+
+        # Delete Card Section
+        ctk.CTkFrame(
+            self.tab_add, fg_color="gray"
+        ).grid(
+            row=5, column=0, 
+            padx=20, pady=15,
+            sticky="ew"
+        )
+        self.lbl_delete_prompt = ctk.CTkLabel(
+            self.tab_add, 
+            text="Delete a card by index",
+            font=ctk.CTkFont(size=13, weight="bold")
+        )
+        self.lbl_delete_prompt.grid(
+            row=6,column=0,
+            padx=20, pady=(0,5),
+            sticky="w"
+        )
+
+        # --- Delete row -entry + button side by side ---
+        self.frame_delete = ctk.CTkFrame(self.tab_add, fg_color="transparent")
+        self.frame_delete.grid(
+            row=7, column=0, 
+            padx=20, pady=(0,20),
+            sticky="ew"
+        )
+        self.frame_delete.grid_columnconfigure(0, weight=1)
+
+        # Single line entry for the card index to delete
+        self.entry_delete_index = ctk.CTkEntry(
+            self.frame_delete,
+            placeholder_text="Card index e.g. 0, 1, 2 ...",
+            height=40
+        )
+        self.entry_delete_index.grid(
+            row=0, column=0,
+            padx=(0,10), sticky="ew"
+        )
+
+        # Delete button 
+        self.btn_delete_card = ctk.CTkButton(
+            self.frame_delete,
+            text="Delete",
+            fg_color="#D85A30",
+            hover_color="#993C1D",
+            width=80, 
+            command=self._delete_card
+        )
+        self.btn_delete_card.grid(
+            row=0, column=1,
+        )
+
 
     def _build_stats_tab(self):
         pass
@@ -217,19 +326,106 @@ class FlipwiseApp(ctk.CTk):
 
     def _reveal_answer(self):
         # reveal the answer
-        pass
+        if not self.deck.cards:
+            return
+        
+        # Get the currecnt card using index
+        card = self.deck.cards[self.current_index]
+
+        # Update the answer label
+        self.lbl_answer.configure(text=card.answer)
+        self.answer_visible = True        
 
     def _mark_correct(self):
         # mark card correct, move to next
-        pass
+        if not self.deck.cards or not self.answer_visible:
+            return                     # do nothing if answer not reviewed yet
+        
+        card = self.deck.cards[self.current_index]
+        card.mark_correct()            # Update the cards score
+        self._next_card()              # Move to the next card
 
     def _mark_incorrect(self):
-        # mark card incorrect, move to next
-        pass
+        if not self.deck.cards or not self.answer_visible:
+            return
+        
+        card = self.deck.cards[self.current_index]
+        card.mark_incorrect()
+        self._next_card()
+
+    def _next_card(self):
+        # Move the card to the next, loop if at the end of the deck
+        self.current_index = (self.current_index + 1) % len(self.deck.cards)
+        self.answer_visible = False      # Hide Answer for the next card
+        self._update_quiz()              # Refrest the UI
+
+    def _update_quiz(self):
+        # called whenever to refresh the quiz display
+        if not self.deck.cards:
+            return
+        
+        card = self.deck.cards[self.current_index]
+        total = len(self.deck.cards)
+
+        # Count correct and incorrect cards
+        correct = sum(c.correct for c in self.deck.cards)
+        attempted = sum(c.attempted for c in self.deck.cards)
+        incorrect = attempted - correct
+
+        # Update all the labels with fresh data
+        self.lbl_progress.configure(text=f"Card {self.current_index + 1} of {total}")
+        self.lbl_question.configure(text=card.question)
+        self.lbl_answer.configure(text="")          # Hide answer in new card
+        self.lbl_total.configure(text=f"Total: {total}")
+        self.lbl_correct.configure(text=f"Correct: {correct}")
+        self.lbl_incorrect.configure(text=f"Incorrect: {incorrect}")
+        self.lbl_card_count.configure(text=f"{total} cards")
+
 
     def _add_card(self):
-        # get input from entry fields and add card
-        pass
+        # Read the question from the entry field
+        question = self.entry_question.get().strip()
+        
+        # Read the answer from the textbook
+        answer = self.textbox_answer.get("1.0", "end").strip()
+
+        # Validate 
+        if not question or not answer:
+            print("Please fill in both fields!")
+            return
+        
+        # Add the card to deck
+        self.deck.add_card(question, answer)
+
+        # Save to file
+        self.deck.save()
+
+        # Clear the entry fields
+        self.entry_question.delete(0, "end")
+        self.textbox_answer.delete("1.0","end")
+
+        # Refresh quiz display
+        self._update_quiz()
+        print(f"Card added! Total Cards : {len(self.deck.cards)}")
+
+    def _delete_card(self):
+        # read the index from the entry field
+        index_str = self.entry_delete_index.get().strip()
+
+        # validate
+        if not index_str.isdigit():
+            print("Please enter a valid index number!")
+            return
+        
+        index= int(index_str)
+
+        result = self._deck.delete_card(index)
+        print(result)
+
+        self.deck.save()
+        self._update_quiz()
+
+        self.entry_delete_index.delete(0, "end")
 
     def _save_and_exit(self):
         # save deck and close app

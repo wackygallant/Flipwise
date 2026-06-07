@@ -26,7 +26,7 @@ class Deck:
         # saves all cards to cards.json
         try:
             with open(self.filepath, 'w') as file:
-                data = {"cards": [card.todict() for card in self.cards]}
+                data = {"cards": [card.to_dict() for card in self.cards]}
                 json.dump(data, file, indent=4)
                 return "Card saved to storage"
         
@@ -40,21 +40,24 @@ class Deck:
         # loads cards from cards.json
         try:
             with open(self.filepath, 'r') as file:
-                data = json.load(file)
+                content = file.read().strip()   # read the raw content first
+
+                if not content:                 # ✅ handle empty file
+                    return
+
+                data = json.loads(content)      # parse only if content exists
 
                 for card in data["cards"]:
-                    self.cards.append(
-                        FlashCard(
-                            question=card["question"],
-                            answer=card["answer"],
-                            correct=card["correct"],
-                            attempted=card["attempted"]
-                            )
-                    )
-                return "Cards loaded successfully"
-        
+                    self.cards.append(FlashCard(
+                        question=card["question"],
+                        answer=card["answer"],
+                        correct=card["correct"],
+                        attempted=card["attempted"]
+                    ))
+                return "Cards loaded successfully!"
+
         except FileNotFoundError:
             print("Error: File not found!")
-            
         except json.JSONDecodeError:
             print("Error: Invalid JSON file format!")
+

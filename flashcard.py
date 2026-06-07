@@ -11,7 +11,7 @@ class FlashCard:
         self.correct += 1
         self.attempted += 1
 
-    def mark_attempts(self):
+    def mark_incorrect(self):
         # Updates total attempts made   
         self.attempted += 1
 
