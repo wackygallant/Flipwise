@@ -14,7 +14,8 @@ class FlipwiseApp(ctk.CTk):
         self.deck.load()
         self.current_index = 0
         self.answer_visible = False
-        
+        self.protocol("WM_DELETE_WINDOW", self._save_and_exit)
+
         self._build_ui()
 
     def _build_ui(self):
@@ -316,9 +317,145 @@ class FlipwiseApp(ctk.CTk):
             row=0, column=1,
         )
 
-
     def _build_stats_tab(self):
-        pass
+        # Title Label
+        self.lbl_stats_title = ctk.CTkLabel(
+            self.tab_stats,
+            text="Your Progress",
+            font=ctk.CTkFont(size=18, weight="bold")
+        )
+        self.lbl_stats_title.grid(
+            row=0, column=0,
+            padx=20, pady=(20,5),
+            sticky="w"
+        )
+
+        # Stats Card Frame
+        self.frame_stats_cards = ctk.CTkFrame(self.tab_stats, fg_color="transparent")
+        self.frame_stats_cards.grid(
+            row=1, column=0, 
+            padx=20, pady=(20,5),
+            sticky="ew"
+        )
+        self.frame_stats_cards.grid_columnconfigure((0,1,2), weight=1)
+
+        # Total Cards Stat
+        self.frame_stat_total = ctk.CTkFrame(self.frame_stats_cards)
+        self.frame_stat_total.grid(row=0, column=0, padx=(0, 5), sticky="ew")
+        self.frame_stat_total.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(
+            self.frame_stat_total,
+            text="Total Cards",
+            font=ctk.CTkFont(size=11),
+            text_color="gray"
+        ).grid(row=0, column=0, pady=(10,2))
+
+
+        self.lbl_stat_total = ctk.CTkLabel(
+            self.frame_stat_total,
+            text="0",
+            font=ctk.CTkFont(size=24, weight="bold")
+        )
+        self.lbl_stat_total.grid(row=1, column=0, pady=(0, 10))
+
+        # Correct stat - Green
+        self.frame_stat_correct = ctk.CTkFrame(self.frame_stats_cards)
+        self.frame_stat_correct.grid(row=0, column=1, padx=5, sticky="ew")
+        self.frame_stat_correct.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(
+            self.frame_stat_correct,
+            text="Correct",
+            font=ctk.CTkFont(size=11),
+            text_color="gray"
+        ).grid(row=0, column=0, pady=(10, 2))
+
+        self.lbl_stat_correct = ctk.CTkLabel(
+            self.frame_stat_correct, 
+            text="0",
+            font=ctk.CTkFont(size=24, weight="bold"),
+            text_color="#1D9E75"
+        )
+        self.lbl_stat_correct.grid(row=1, column=0, pady=(0, 10))
+
+        # Incorrect stat - red
+        self.frame_stat_incorrect = ctk.CTkFrame(self.frame_stats_cards)
+        self.frame_stat_incorrect.grid(row=0, column=2, padx=(5, 0), sticky="ew")
+        self.frame_stat_incorrect.grid_columnconfigure(0, weight=1)
+        
+        ctk.CTkLabel(
+            self.frame_stat_incorrect,
+            text="Incorrect",
+            font=ctk.CTkFont(size=11),
+            text_color="gray"
+        ).grid(row=0, column=0, pady=(10,2))
+
+        self.lbl_stat_incorrect = ctk.CTkLabel(
+            self.frame_stat_incorrect, 
+            text="0", 
+            font=ctk.CTkFont(size=24, weight="bold"),
+            text_color="#D85A30",
+        )
+        self.lbl_stat_incorrect.grid(row=1, column=0, pady=(0, 10))
+
+        # Accuracy Bar
+        self.lbl_accuracy_title = ctk.CTkLabel(
+            self.tab_stats,
+            text="Accuracy",
+            font=ctk.CTkFont(size=13, weight="bold")
+        )
+        self.lbl_accuracy_title.grid(
+            row=2, column=0,
+            padx=20, pady=(15, 5),
+            sticky="w"
+        )
+
+        # Progress Bar
+        self.accuracy_bar = ctk.CTkProgressBar(self.tab_stats)
+        self.accuracy_bar.set(0)
+        self.accuracy_bar.grid(
+            row=3, column=0,
+            padx=20, pady=(0, 5), 
+            sticky="ew"
+        )
+
+        # Accuracy Percentage Label
+        self.lbl_accuracy_pct = ctk.CTkLabel(
+            self.tab_stats, 
+            text="0% accuracy",
+            font=ctk.CTkFont(size=13),
+            text_color="gray"
+        )
+        self.lbl_accuracy_pct.grid(
+            row=4, column=0, 
+            padx=20, pady=(0, 15), 
+            sticky="w"
+        )
+
+        # Card List
+        self.lbl_card_list_title = ctk.CTkLabel(
+            self.tab_stats,
+            text="Card Breakdown",
+            font=ctk.CTkFont(size=13, weight="bold")
+        )
+        self.lbl_card_list_title.grid(
+            row=5, column=0, 
+            padx=20, pady=(5,5),
+            sticky="w"
+        )
+
+        # Scrollable Frame
+        self.frame_card_list = ctk.CTkScrollableFrame(self.tab_stats)
+        self.frame_card_list.grid(
+            row=6, column=0,
+            padx=20, pady=(0, 20), 
+            sticky="nsew"
+       )
+        self.frame_card_list.grid_columnconfigure(0, weight=1)
+
+        # Expand row 6 to fill remaining space
+        self.tab_stats.grid_rowconfigure(6, weight=1)
 
     def _show_quiz(self):
         # display current flashcard question
@@ -358,6 +495,7 @@ class FlipwiseApp(ctk.CTk):
         self.current_index = (self.current_index + 1) % len(self.deck.cards)
         self.answer_visible = False      # Hide Answer for the next card
         self._update_quiz()              # Refrest the UI
+        self._update_stats()
 
     def _update_quiz(self):
         # called whenever to refresh the quiz display
@@ -381,6 +519,51 @@ class FlipwiseApp(ctk.CTk):
         self.lbl_incorrect.configure(text=f"Incorrect: {incorrect}")
         self.lbl_card_count.configure(text=f"{total} cards")
 
+    def _update_stats(self):
+        # To refresh the stats tab
+        total = len(self.deck.cards)
+        correct = sum(c.correct for c in self.deck.cards)
+        attempted = sum(c.attempted for c in self.deck.cards)
+        incorrect = attempted - incorrect
+
+        # Update the stat number labels
+        self.lbl_stat_total.configure(text=str(total))
+        self.lbl_stat_correct.configure(text=str(correct))
+        self.lbl_stat_incorrect.configure(text=str(incorrect))
+
+        # Calculate and display accuracy
+        accuracy = (correct / attempted) if attempted > 0 else 0
+        self.accuracy_bar.set(accuracy)
+        self.lbl_accuracy_pct.configure(text=f"{int(accuracy * 100)}% accuracy")
+
+        # Rebuild the card breakdown list
+        for widget in self.frame_card_list.winfo_children():
+            widget.destroy()
+
+        # Create a row for each card
+        for i, card in enumerate(self.deck.cards):
+            row_frame = ctk.CTkFrame(self.frame_card_list, fg_color="transparent")
+            row_frame.grid(row=i, column=0, pady=4, sticky="ew")
+            row_frame.grid_columnconfigure(0, weight=1)
+
+            # Question text
+            question_preview = card.question[:45] + "..." \
+                    if len(card.question) > 45 else card.question
+            
+            ctk.CTkLabel(
+                row_frame, 
+                text=question_preview,
+                font=ctk.CTkFont(size=12), 
+                anchor="w"
+            ).grid(row=0, column=0, sticky="w")
+
+            ctk.CTkLabel(
+                row_frame, 
+                text=card.get_stats(), 
+                font=ctk.CTkFont(size=11), 
+                text_color="gray",
+                anchor="w"
+            ).grid(row=1, column=0, sticky="w")
 
     def _add_card(self):
         # Read the question from the entry field
@@ -406,6 +589,7 @@ class FlipwiseApp(ctk.CTk):
 
         # Refresh quiz display
         self._update_quiz()
+        self._update_stats()
         print(f"Card added! Total Cards : {len(self.deck.cards)}")
 
     def _delete_card(self):
@@ -424,12 +608,13 @@ class FlipwiseApp(ctk.CTk):
 
         self.deck.save()
         self._update_quiz()
+        self._update_stats()
 
         self.entry_delete_index.delete(0, "end")
 
     def _save_and_exit(self):
-        # save deck and close app
-        pass
+        self.deck.save()
+        self.destroy()
 
 if __name__ == "__main__":
     app = FlipwiseApp()
