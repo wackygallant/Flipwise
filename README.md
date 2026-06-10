@@ -126,16 +126,6 @@ Flashcards are stored in `data/cards.json` in the following format:
 - Python 3.8+
 - customtkinter 5.0+
 
-## Future Enhancements 🔮
-
-Potential features for future versions:
-- Spaced repetition algorithm
-- Card categories/decks
-- Import/export functionality
-- Search and filter cards
-- Keyboard shortcuts
-- Study session timing
-
 ## License 📄
 
 This project is open source and available for personal and educational use.
