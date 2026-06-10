@@ -17,6 +17,8 @@ class FlipwiseApp(ctk.CTk):
         self.protocol("WM_DELETE_WINDOW", self._save_and_exit)
 
         self._build_ui()
+        self._update_quiz()
+        self._update_stats()
 
     def _build_ui(self):
         # --- Main Window Grid ---
@@ -524,7 +526,7 @@ class FlipwiseApp(ctk.CTk):
         total = len(self.deck.cards)
         correct = sum(c.correct for c in self.deck.cards)
         attempted = sum(c.attempted for c in self.deck.cards)
-        incorrect = attempted - incorrect
+        incorrect = attempted - correct
 
         # Update the stat number labels
         self.lbl_stat_total.configure(text=str(total))
